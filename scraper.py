@@ -1,6 +1,7 @@
 import re  # Permite limpar e padronizar espaços nos textos extraídos.
 import csv  # Permite criar o arquivo de resultados no formato CSV.
 import json  # Permite criar o arquivo de resultados no formato JSON.
+import os  # Permite verificar se os arquivos de uma execução já existem.
 import time  # Permite esperar o carregamento da página após cada ação.
 from urllib.parse import urljoin  # Monta URLs completas a partir de links relativos.
 
@@ -94,10 +95,11 @@ def coletar_html_com_scroll(url, lotes_alvo):
             # Versão com SELETOR CSS (a que usávamos antes):
             # qtd = len(driver.find_elements("css selector", "div.card.js_rowCard"))
 
-            # Conta os elementos que possuem a classe js_rowCard usando XPath.
-
-      
-            
+            # Procura no HTML todos os elementos <div> que possuem as classes
+            # "card" e "js_rowCard". By.XPATH informa ao Selenium que o texto
+            # seguinte deve ser interpretado como um seletor XPath. O método
+            # find_elements retorna uma lista com os elementos encontrados, e
+            # len() conta essa lista; por isso, qtd guarda o total de cards.
             qtd = len(driver.find_elements(
     By.XPATH,
     "//div[contains(concat(' ', normalize-space(@class), ' '), ' card ') "
@@ -126,6 +128,15 @@ def coletar_html_com_scroll(url, lotes_alvo):
     finally:
         # Fecha o navegador mesmo se ocorrer algum erro durante a coleta.
         driver.quit()
+
+
+def proximo_numero_arquivo():
+    # Começa pelo sufixo _1 e aumenta até encontrar um par de nomes disponível.
+    numero = 1
+    while (os.path.exists(f"vagas_infojobs_{numero}.csv")
+           or os.path.exists(f"vagas_infojobs_{numero}.json")):
+        numero += 1
+    return numero
 
 
 def main():
@@ -171,8 +182,12 @@ def main():
 
     # Define a ordem das colunas no arquivo CSV.
     campos = ["titulo", "empresa", "local", "salario", "link", "descricao"]
+    # Escolhe um número que ainda não foi usado para não sobrescrever resultados.
+    numero_arquivo = proximo_numero_arquivo()
+    nome_csv = f"vagas_infojobs_{numero_arquivo}.csv"
+    nome_json = f"vagas_infojobs_{numero_arquivo}.json"
     # Abre ou cria o CSV para escrita usando UTF-8 com marca compatível com Excel.
-    with open("vagas_infojobs.csv", "w", newline="", encoding="utf-8-sig") as f:
+    with open(nome_csv, "w", newline="", encoding="utf-8-sig") as f:
         # Cria um escritor que transforma dicionários em linhas do CSV.
         writer = csv.DictWriter(f, fieldnames=campos)
         # Escreve a primeira linha com os nomes das colunas.
@@ -181,12 +196,12 @@ def main():
         writer.writerows(vagas)
 
     # Abre ou cria o arquivo JSON para escrita usando UTF-8.
-    with open("vagas_infojobs.json", "w", encoding="utf-8") as f:
+    with open(nome_json, "w", encoding="utf-8") as f:
         # Salva a lista de vagas no JSON, preservando acentos e usando indentação.
         json.dump(vagas, f, ensure_ascii=False, indent=2)
 
     # Confirma no terminal que os dois arquivos foram gerados.
-    print("\nArquivos gerados: vagas_infojobs.csv e vagas_infojobs.json")
+    print(f"\nArquivos gerados: {nome_csv} e {nome_json}")
 
 
 # Executa a função principal somente quando este arquivo é executado diretamente.
