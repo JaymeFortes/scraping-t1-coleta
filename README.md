@@ -42,11 +42,7 @@ python -m venv .venv
 # Linux/Mac:
 source .venv/bin/activate
 
-# instalar as dependências
-pip install -r requirements.txt
-```
-
-Caso não haja um `requirements.txt`, instale diretamente:
+# instalar as dependências```
 
 ```bash
 pip install selenium beautifulsoup4
